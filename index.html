@@ -6,20 +6,21 @@
 <title>삼각형 면적 계산기</title>
 
 <style>
+
 body{
-    font-family: Arial,sans-serif;
+    font-family: Arial, sans-serif;
     background:#f4f6f9;
     margin:0;
     padding:20px;
 }
 
 .container{
-    max-width:700px;
+    max-width:800px;
     margin:auto;
     background:white;
     padding:30px;
-    border-radius:10px;
-    box-shadow:0 0 15px rgba(0,0,0,.1);
+    border-radius:12px;
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
 }
 
 h1{
@@ -31,21 +32,19 @@ label{
     margin-top:10px;
 }
 
-input,select{
+input, select{
     width:100%;
     padding:10px;
     box-sizing:border-box;
 }
 
 button{
-    width:100%;
-    margin-top:20px;
     padding:12px;
+    margin-top:15px;
     background:#0078D4;
     color:white;
     border:none;
     border-radius:6px;
-    font-size:16px;
     cursor:pointer;
 }
 
@@ -53,25 +52,34 @@ button:hover{
     background:#005A9E;
 }
 
-#result{
-    margin-top:20px;
-    text-align:center;
-    font-size:22px;
-    font-weight:bold;
-    color:#0078D4;
-}
-
 .diagram{
     text-align:center;
     margin:20px 0;
 }
 
-svg{
-    max-width:300px;
+#result{
+    margin-top:20px;
+    font-size:22px;
+    font-weight:bold;
+    text-align:center;
+    color:#0078D4;
+}
+
+canvas{
+    border:1px solid #aaa;
+    background:white;
+}
+
+.button-row{
+    display:flex;
+    gap:10px;
+}
+
+.button-row button{
+    flex:1;
 }
 </style>
 </head>
-
 <body>
 
 <div class="container">
@@ -84,13 +92,17 @@ svg{
     <option value="1">① 밑변 + 높이</option>
     <option value="2">② 밑변 + 두 각도</option>
     <option value="3">③ 두 변 + 끼인각</option>
+    <option value="4">④ 세 점 클릭</option>
 </select>
 
 <div class="diagram" id="diagram"></div>
 
 <div id="inputs"></div>
 
-<button onclick="calculateArea()">계산하기</button>
+<div class="button-row">
+    <button onclick="calculateArea()">계산하기</button>
+    <button onclick="resetAll()">초기화</button>
+</div>
 
 <div id="result"></div>
 
@@ -98,131 +110,345 @@ svg{
 
 <script>
 
+let clickedPoints = [];
+
 function degToRad(deg){
-    return deg*Math.PI/180;
+    return deg * Math.PI / 180;
 }
 
 function changeMode(){
 
-    const mode=document.getElementById("mode").value;
-    const inputs=document.getElementById("inputs");
-    const diagram=document.getElementById("diagram");
+    const mode = document.getElementById("mode").value;
+
+    const diagram = document.getElementById("diagram");
+    const inputs = document.getElementById("inputs");
+
+    document.getElementById("result").innerHTML="";
 
     if(mode==="1"){
 
         diagram.innerHTML=`
-        <svg viewBox="0 0 300 200">
-            <polygon points="50,170 250,170 120,40"
+        <svg width="280" height="180">
+            <polygon points="40,150 240,150 120,40"
             fill="none" stroke="black" stroke-width="2"/>
-            <line x1="120" y1="40" x2="120" y2="170"
+
+            <line x1="120" y1="40" x2="120" y2="150"
             stroke="red" stroke-dasharray="4"/>
-            <text x="145" y="110" fill="red">높이 h</text>
-            <text x="130" y="190" fill="blue">밑변 b</text>
+
+            <text x="130" y="95" fill="red">h</text>
+            <text x="130" y="170" fill="blue">b</text>
         </svg>
         `;
 
         inputs.innerHTML=`
         <label>밑변 b</label>
-        <input id="base">
+        <input type="number" id="base">
 
         <label>높이 h</label>
-        <input id="height">
+        <input type="number" id="height">
         `;
     }
 
     if(mode==="2"){
 
         diagram.innerHTML=`
-        <svg viewBox="0 0 300 200">
-            <polygon points="50,170 250,170 150,50"
+        <svg width="280" height="180">
+            <polygon points="40,150 240,150 140,40"
             fill="none" stroke="black" stroke-width="2"/>
-            <text x="120" y="190" fill="blue">밑변 c</text>
-            <text x="40" y="160" fill="red">A</text>
-            <text x="250" y="160" fill="red">B</text>
+
+            <text x="125" y="170" fill="blue">c</text>
+            <text x="30" y="145" fill="red">A</text>
+            <text x="245" y="145" fill="red">B</text>
         </svg>
         `;
 
         inputs.innerHTML=`
         <label>밑변 c</label>
-        <input id="base">
+        <input type="number" id="base">
 
-        <label>각도 A(°)</label>
-        <input id="angleA">
+        <label>각도 A (°)</label>
+        <input type="number" id="angleA">
 
-        <label>각도 B(°)</label>
-        <input id="angleB">
+        <label>각도 B (°)</label>
+        <input type="number" id="angleB">
         `;
     }
 
     if(mode==="3"){
 
         diagram.innerHTML=`
-        <svg viewBox="0 0 300 200">
-            <polygon points="60,170 240,170 110,40"
-            fill="none" stroke="black" stroke-width="2"/>
-            <text x="70" y="100" fill="red">a</text>
-            <text x="180" y="100" fill="red">b</text>
-            <text x="140" y="165" fill="blue">C</text>
+        <svg width="280" height="180">
+            <polygon points="60,150 220,150 120,40"
+            fill="none"
+            stroke="black"
+            stroke-width="2"/>
+
+            <text x="80" y="95" fill="red">a</text>
+            <text x="170" y="95" fill="red">b</text>
+
+            <path d="M110 65 A25 25 0 0 1 135 70"
+            fill="none"
+            stroke="blue"
+            stroke-width="2"/>
+
+            <text x="125"
+            y="55"
+            fill="blue"
+            font-weight="bold">C</text>
+
         </svg>
         `;
 
         inputs.innerHTML=`
         <label>변 a</label>
-        <input id="sideA">
+        <input type="number" id="sideA">
 
         <label>변 b</label>
-        <input id="sideB">
+        <input type="number" id="sideB">
 
-        <label>끼인각 C(°)</label>
-        <input id="angleC">
+        <label>끼인각 C (°)</label>
+        <input type="number" id="angleC">
         `;
+    }
+
+    if(mode==="4"){
+
+        clickedPoints=[];
+
+        diagram.innerHTML=`
+        <canvas id="gridCanvas"
+        width="600"
+        height="400"></canvas>
+
+        <p>
+        점 3개를 순서대로 클릭하세요.
+        </p>
+        `;
+
+        inputs.innerHTML="";
+
+        setTimeout(initCanvas,50);
     }
 }
 
 function calculateArea(){
 
-    const mode=document.getElementById("mode").value;
+    const mode =
+    document.getElementById("mode").value;
 
     let area=0;
 
     if(mode==="1"){
 
-        const b=parseFloat(document.getElementById("base").value);
-        const h=parseFloat(document.getElementById("height").value);
+        const b =
+        parseFloat(
+        document.getElementById("base").value);
 
-        area=b*h/2;
+        const h =
+        parseFloat(
+        document.getElementById("height").value);
+
+        area = b*h/2;
     }
 
     if(mode==="2"){
 
-        const c=parseFloat(document.getElementById("base").value);
-        const A=parseFloat(document.getElementById("angleA").value);
-        const B=parseFloat(document.getElementById("angleB").value);
+        const c =
+        parseFloat(
+        document.getElementById("base").value);
+
+        const A =
+        parseFloat(
+        document.getElementById("angleA").value);
+
+        const B =
+        parseFloat(
+        document.getElementById("angleB").value);
 
         area =
-        (
-            c*c*
-            Math.sin(degToRad(A))*
-            Math.sin(degToRad(B))
-        )
+        (c*c*
+        Math.sin(degToRad(A))*
+        Math.sin(degToRad(B)))
         /
-        (
-            2*Math.sin(degToRad(A+B))
-        );
+        (2*Math.sin(degToRad(A+B)));
     }
 
     if(mode==="3"){
 
-        const a=parseFloat(document.getElementById("sideA").value);
-        const b=parseFloat(document.getElementById("sideB").value);
-        const C=parseFloat(document.getElementById("angleC").value);
+        const a =
+        parseFloat(
+        document.getElementById("sideA").value);
 
-        area=
-        a*b*Math.sin(degToRad(C))/2;
+        const b =
+        parseFloat(
+        document.getElementById("sideB").value);
+
+        const C =
+        parseFloat(
+        document.getElementById("angleC").value);
+
+        area =
+        a*b*
+        Math.sin(degToRad(C))
+        /2;
     }
 
-    document.getElementById("result").innerHTML=
-        `면적 = ${area.toFixed(3)}`;
+    if(mode==="4"){
+        return;
+    }
+
+    if(isNaN(area)){
+        document.getElementById("result").innerHTML =
+        "입력값을 확인하세요.";
+        return;
+    }
+
+    document.getElementById("result").innerHTML =
+    "면적 = " +
+    area.toFixed(3);
+}
+
+function initCanvas(){
+
+    const canvas =
+    document.getElementById("gridCanvas");
+
+    const ctx =
+    canvas.getContext("2d");
+
+    drawGrid();
+
+    canvas.onclick=function(e){
+
+        if(clickedPoints.length>=3){
+            return;
+        }
+
+        const rect =
+        canvas.getBoundingClientRect();
+
+        const x =
+        e.clientX - rect.left;
+
+        const y =
+        e.clientY - rect.top;
+
+        clickedPoints.push({
+            x:x,
+            y:y
+        });
+
+        drawGrid();
+        drawPoints();
+
+        if(clickedPoints.length===3){
+
+            drawTriangle();
+
+            calculateCoordinateArea();
+        }
+    };
+
+    function drawGrid(){
+
+        ctx.clearRect(
+        0,0,
+        canvas.width,
+        canvas.height);
+
+        ctx.strokeStyle="#e0e0e0";
+        ctx.lineWidth=1;
+
+        for(let x=0;x<=canvas.width;x+=25){
+
+            ctx.beginPath();
+            ctx.moveTo(x,0);
+            ctx.lineTo(x,canvas.height);
+            ctx.stroke();
+        }
+
+        for(let y=0;y<=canvas.height;y+=25){
+
+            ctx.beginPath();
+            ctx.moveTo(0,y);
+            ctx.lineTo(canvas.width,y);
+            ctx.stroke();
+        }
+    }
+
+    function drawPoints(){
+
+        ctx.fillStyle="red";
+
+        clickedPoints.forEach((p,index)=>{
+
+            ctx.beginPath();
+
+            ctx.arc(
+            p.x,
+            p.y,
+            5,
+            0,
+            Math.PI*2);
+
+            ctx.fill();
+
+            ctx.fillText(
+            "P"+(index+1),
+            p.x+8,
+            p.y-8);
+        });
+    }
+
+    function drawTriangle(){
+
+        ctx.strokeStyle="blue";
+        ctx.lineWidth=2;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+        clickedPoints[0].x,
+        clickedPoints[0].y);
+
+        ctx.lineTo(
+        clickedPoints[1].x,
+        clickedPoints[1].y);
+
+        ctx.lineTo(
+        clickedPoints[2].x,
+        clickedPoints[2].y);
+
+        ctx.closePath();
+
+        ctx.stroke();
+    }
+}
+
+function calculateCoordinateArea(){
+
+    const p1 = clickedPoints[0];
+    const p2 = clickedPoints[1];
+    const p3 = clickedPoints[2];
+
+    const area = Math.abs(
+        p1.x*(p2.y-p3.y)
+      + p2.x*(p3.y-p1.y)
+      + p3.x*(p1.y-p2.y)
+    )/2;
+
+    document.getElementById("result").innerHTML =
+    "면적 = " +
+    area.toFixed(3);
+}
+
+function resetAll(){
+
+    clickedPoints=[];
+
+    document.getElementById("result").innerHTML="";
+
+    changeMode();
 }
 
 changeMode();
