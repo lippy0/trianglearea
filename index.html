@@ -1,105 +1,233 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>삼각형 면적 계산기</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼각형 면적 계산기</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+<style>
+body{
+    font-family: Arial,sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:20px;
+}
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            width: 350px;
-        }
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,.1);
+}
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+h1{
+    text-align:center;
+}
 
-        label {
-            display: block;
-            margin-top: 10px;
-            margin-bottom: 5px;
-        }
+label{
+    display:block;
+    margin-top:10px;
+}
 
-        input {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
+input,select{
+    width:100%;
+    padding:10px;
+    box-sizing:border-box;
+}
 
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 20px;
-            background-color: #0078D4;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+button{
+    width:100%;
+    margin-top:20px;
+    padding:12px;
+    background:#0078D4;
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-size:16px;
+    cursor:pointer;
+}
 
-        button:hover {
-            background-color: #005A9E;
-        }
+button:hover{
+    background:#005A9E;
+}
 
-        #result {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #0078D4;
-        }
-    </style>
+#result{
+    margin-top:20px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    color:#0078D4;
+}
+
+.diagram{
+    text-align:center;
+    margin:20px 0;
+}
+
+svg{
+    max-width:300px;
+}
+</style>
 </head>
+
 <body>
 
-    <div class="container">
-        <h2>삼각형 면적 계산기</h2>
+<div class="container">
 
-        <label for="base">밑변</label>
-        <input type="number" id="base" placeholder="밑변 입력">
+<h1>삼각형 면적 계산기</h1>
 
-        <label for="height">높이</label>
-        <input type="number" id="height" placeholder="높이 입력">
+<label>입력 방식</label>
 
-        <button onclick="calculateArea()">계산하기</button>
+<select id="mode" onchange="changeMode()">
+    <option value="1">① 밑변 + 높이</option>
+    <option value="2">② 밑변 + 두 각도</option>
+    <option value="3">③ 두 변 + 끼인각</option>
+</select>
 
-        <div id="result"></div>
-    </div>
+<div class="diagram" id="diagram"></div>
 
-    <script>
-        function calculateArea() {
-            const base = parseFloat(document.getElementById("base").value);
-            const height = parseFloat(document.getElementById("height").value);
+<div id="inputs"></div>
 
-            if (isNaN(base) || isNaN(height)) {
-                document.getElementById("result").innerHTML =
-                    "밑변과 높이를 입력하세요.";
-                return;
-            }
+<button onclick="calculateArea()">계산하기</button>
 
-            const area = base * height / 2;
+<div id="result"></div>
 
-            document.getElementById("result").innerHTML =
-                "면적 : " + area.toFixed(2) + " ㎡";
-        }
-    </script>
+</div>
+
+<script>
+
+function degToRad(deg){
+    return deg*Math.PI/180;
+}
+
+function changeMode(){
+
+    const mode=document.getElementById("mode").value;
+    const inputs=document.getElementById("inputs");
+    const diagram=document.getElementById("diagram");
+
+    if(mode==="1"){
+
+        diagram.innerHTML=`
+        <svg viewBox="0 0 300 200">
+            <polygon points="50,170 250,170 120,40"
+            fill="none" stroke="black" stroke-width="2"/>
+            <line x1="120" y1="40" x2="120" y2="170"
+            stroke="red" stroke-dasharray="4"/>
+            <text x="145" y="110" fill="red">높이 h</text>
+            <text x="130" y="190" fill="blue">밑변 b</text>
+        </svg>
+        `;
+
+        inputs.innerHTML=`
+        <label>밑변 b</label>
+        <input id="base">
+
+        <label>높이 h</label>
+        <input id="height">
+        `;
+    }
+
+    if(mode==="2"){
+
+        diagram.innerHTML=`
+        <svg viewBox="0 0 300 200">
+            <polygon points="50,170 250,170 150,50"
+            fill="none" stroke="black" stroke-width="2"/>
+            <text x="120" y="190" fill="blue">밑변 c</text>
+            <text x="40" y="160" fill="red">A</text>
+            <text x="250" y="160" fill="red">B</text>
+        </svg>
+        `;
+
+        inputs.innerHTML=`
+        <label>밑변 c</label>
+        <input id="base">
+
+        <label>각도 A(°)</label>
+        <input id="angleA">
+
+        <label>각도 B(°)</label>
+        <input id="angleB">
+        `;
+    }
+
+    if(mode==="3"){
+
+        diagram.innerHTML=`
+        <svg viewBox="0 0 300 200">
+            <polygon points="60,170 240,170 110,40"
+            fill="none" stroke="black" stroke-width="2"/>
+            <text x="70" y="100" fill="red">a</text>
+            <text x="180" y="100" fill="red">b</text>
+            <text x="140" y="165" fill="blue">C</text>
+        </svg>
+        `;
+
+        inputs.innerHTML=`
+        <label>변 a</label>
+        <input id="sideA">
+
+        <label>변 b</label>
+        <input id="sideB">
+
+        <label>끼인각 C(°)</label>
+        <input id="angleC">
+        `;
+    }
+}
+
+function calculateArea(){
+
+    const mode=document.getElementById("mode").value;
+
+    let area=0;
+
+    if(mode==="1"){
+
+        const b=parseFloat(document.getElementById("base").value);
+        const h=parseFloat(document.getElementById("height").value);
+
+        area=b*h/2;
+    }
+
+    if(mode==="2"){
+
+        const c=parseFloat(document.getElementById("base").value);
+        const A=parseFloat(document.getElementById("angleA").value);
+        const B=parseFloat(document.getElementById("angleB").value);
+
+        area =
+        (
+            c*c*
+            Math.sin(degToRad(A))*
+            Math.sin(degToRad(B))
+        )
+        /
+        (
+            2*Math.sin(degToRad(A+B))
+        );
+    }
+
+    if(mode==="3"){
+
+        const a=parseFloat(document.getElementById("sideA").value);
+        const b=parseFloat(document.getElementById("sideB").value);
+        const C=parseFloat(document.getElementById("angleC").value);
+
+        area=
+        a*b*Math.sin(degToRad(C))/2;
+    }
+
+    document.getElementById("result").innerHTML=
+        `면적 = ${area.toFixed(3)}`;
+}
+
+changeMode();
+
+</script>
 
 </body>
 </html>
-``
